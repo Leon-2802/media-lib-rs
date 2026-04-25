@@ -1,25 +1,27 @@
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Library {
     pub id: i32,
     pub name: String,
     pub path: PathBuf,
+    pub series: Vec<Series>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Series {
     pub id: i32,
     pub name: String,
     pub path: PathBuf,
+    pub parts: Vec<Part>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Part {
     pub id: i32,
-    pub series_id: i32,
     pub name: String,
     pub path: PathBuf,
+    pub items: Vec<Item>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,7 +48,6 @@ impl ItemType {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Item {
     pub id: i32,
-    pub part_id: i32,
     pub name: String,
     pub path: PathBuf,
     pub item_type: ItemType,
