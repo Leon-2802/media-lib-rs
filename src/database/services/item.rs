@@ -1,5 +1,5 @@
 use super::super::models::data::Item;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct LibService {
     // db

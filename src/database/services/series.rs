@@ -1,5 +1,5 @@
 use super::super::models::data::{Part, Series};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct SeriesService {
     // db
