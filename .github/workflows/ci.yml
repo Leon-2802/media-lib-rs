@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always # tells Cargo how to handle colored output in its terminal messages
+
+jobs:
+  ci:
+    name: Format, Test & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code # clones repo onto virtual machine
+        uses: actions/checkout@v4
+  
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          
+      - name: Cache dependencies # caches compiled dependencies between runs -> faster subsequent pipeline runs 
+        uses: Swatinem/rust-cache@v2
+        
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+        
+      - name: Run Clippy (linter) # flags patterns that are likely bugs, unnecessarily complex, or unidiomatic Rust
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        
+      - name: Run tests
+        run: cargo test --all-features
+  
+      - name: Build release
+        run: cargo build --release
+
