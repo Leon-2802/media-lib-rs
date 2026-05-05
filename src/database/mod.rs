@@ -15,6 +15,8 @@ use services::rating::RatingService;
 use services::scan::ScanService;
 use services::tag::TagService;
 
+use crate::database::services::search_history::SearchHistoryService;
+
 #[derive(Debug, Error)]
 pub enum DbError {
     #[error(transparent)]
@@ -65,6 +67,10 @@ impl Database {
 
     pub fn favorites(&self) -> FavoriteService {
         FavoriteService::new(self.conn.clone())
+    }
+
+    pub fn search_history(&self) -> SearchHistoryService {
+        SearchHistoryService::new(self.conn.clone())
     }
 
     pub fn scanner(&self) -> ScanService {

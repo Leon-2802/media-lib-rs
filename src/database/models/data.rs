@@ -1,7 +1,8 @@
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum LibraryKind {
+    #[default]
     Movies,
     Tv,
     Manga,
@@ -12,32 +13,76 @@ pub enum LibraryKind {
 
 impl LibraryKind {
     pub fn as_str(&self) -> &'static str {
-        todo!()
+        match self {
+            Self::Movies => "movies",
+            Self::Tv => "tv",
+            Self::Manga => "manga",
+            Self::Books => "books",
+            Self::Music => "music",
+            Self::Audiobooks => "audiobooks",
+        }
     }
 
     pub fn from_str(s: &str) -> Option<Self> {
-        todo!()
+        match s {
+            "movies" => Some(Self::Movies),
+            "tv" => Some(Self::Tv),
+            "manga" => Some(Self::Manga),
+            "books" => Some(Self::Books),
+            "music" => Some(Self::Music),
+            "audiobooks" => Some(Self::Audiobooks),
+            _ => None,
+        }
+    }
+
+    pub fn from(s: String) -> Option<Self> {
+        match s.as_str() {
+            "movies" => Some(Self::Movies),
+            "tv" => Some(Self::Tv),
+            "manga" => Some(Self::Manga),
+            "books" => Some(Self::Books),
+            "music" => Some(Self::Music),
+            "audiobooks" => Some(Self::Audiobooks),
+            _ => None,
+        }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum EntryKind {
+    #[default]
     Folder,
     File,
 }
 
 impl EntryKind {
     pub fn as_str(&self) -> &'static str {
-        todo!()
+        match self {
+            Self::Folder => "folder",
+            Self::File => "file",
+        }
     }
 
     pub fn from_str(s: &str) -> Option<Self> {
-        todo!()
+        match s {
+            "folder" => Some(Self::Folder),
+            "file" => Some(Self::File),
+            _ => None,
+        }
+    }
+
+    pub fn from(s: String) -> Option<Self> {
+        match s.as_str() {
+            "folder" => Some(Self::Folder),
+            "file" => Some(Self::File),
+            _ => None,
+        }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ItemType {
+    #[default]
     Img,
     Vid,
     Aud,
@@ -57,11 +102,32 @@ impl ItemType {
     }
 
     pub fn as_str(&self) -> &'static str {
-        todo!()
+        match self {
+            Self::Img => "img",
+            Self::Vid => "vid",
+            Self::Aud => "aud",
+            Self::Read => "read",
+        }
     }
 
     pub fn from_str(s: &str) -> Option<Self> {
-        todo!()
+        match s {
+            "img" => Some(Self::Img),
+            "vid" => Some(Self::Vid),
+            "aud" => Some(Self::Aud),
+            "read" => Some(Self::Read),
+            _ => None,
+        }
+    }
+
+    pub fn from(s: String) -> Option<Self> {
+        match s.as_str() {
+            "img" => Some(Self::Img),
+            "vid" => Some(Self::Vid),
+            "aud" => Some(Self::Aud),
+            "read" => Some(Self::Read),
+            _ => None,
+        }
     }
 }
 
