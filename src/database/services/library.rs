@@ -1,34 +1,37 @@
-use super::super::models::data::{Library, Series};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::sync::{Arc, Mutex};
 
-pub struct LibService {
-    // db
+use rusqlite::{Connection, Result};
+
+use crate::database::models::data::{Entry, Library, LibraryKind};
+
+pub struct LibraryService {
+    conn: Arc<Mutex<Connection>>,
 }
 
-impl LibService {
-    pub fn new() -> Self {
-        Self {
-            // db
-        }
+impl LibraryService {
+    pub fn new(conn: Arc<Mutex<Connection>>) -> Self {
+        Self { conn }
     }
 
-    fn add_library(path: PathBuf, name: String) -> bool {
-        false
+    pub fn add(&self, _name: &str, _path: &Path, _kind: LibraryKind) -> Result<i64> {
+        todo!()
     }
 
-    fn get_library(lib_id: &i32) -> Option<Library> {
-        None
+    pub fn get(&self, _id: i64) -> Result<Option<Library>> {
+        todo!()
     }
 
-    fn get_all_libraries() -> Vec<Library> {
-        vec![]
+    pub fn all(&self) -> Result<Vec<Library>> {
+        todo!()
     }
 
-    fn delete_library(lib_id: &i32) -> bool {
-        false
+    pub fn delete(&self, _id: i64) -> Result<bool> {
+        todo!()
     }
 
-    fn get_series_in_library(lib_id: &i32) -> Vec<Series> {
-        vec![]
+    /// Top-level entries of a library (rows where parent_id IS NULL).
+    pub fn titles(&self, _library_id: i64) -> Result<Vec<Entry>> {
+        todo!()
     }
 }

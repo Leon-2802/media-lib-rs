@@ -1,4 +1,7 @@
-pub mod item;
+pub mod entry;
+pub mod favorite;
 pub mod library;
-pub mod part;
-pub mod series;
+pub mod rating;
+pub mod scan;
+pub mod search_history;
+pub mod tag;

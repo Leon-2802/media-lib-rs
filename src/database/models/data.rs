@@ -1,56 +1,155 @@
 use std::path::{Path, PathBuf};
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct Library {
-    pub id: i32,
-    pub name: String,
-    pub path: PathBuf,
-    pub series: Vec<Series>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum LibraryKind {
+    #[default]
+    Movies,
+    Tv,
+    Manga,
+    Books,
+    Music,
+    Audiobooks,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct Series {
-    pub id: i32,
-    pub name: String,
-    pub path: PathBuf,
-    pub parts: Vec<Part>,
+impl LibraryKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Movies => "movies",
+            Self::Tv => "tv",
+            Self::Manga => "manga",
+            Self::Books => "books",
+            Self::Music => "music",
+            Self::Audiobooks => "audiobooks",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "movies" => Some(Self::Movies),
+            "tv" => Some(Self::Tv),
+            "manga" => Some(Self::Manga),
+            "books" => Some(Self::Books),
+            "music" => Some(Self::Music),
+            "audiobooks" => Some(Self::Audiobooks),
+            _ => None,
+        }
+    }
+
+    pub fn from(s: String) -> Option<Self> {
+        match s.as_str() {
+            "movies" => Some(Self::Movies),
+            "tv" => Some(Self::Tv),
+            "manga" => Some(Self::Manga),
+            "books" => Some(Self::Books),
+            "music" => Some(Self::Music),
+            "audiobooks" => Some(Self::Audiobooks),
+            _ => None,
+        }
+    }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct Part {
-    pub id: i32,
-    pub name: String,
-    pub path: PathBuf,
-    pub items: Vec<Item>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum EntryKind {
+    #[default]
+    Folder,
+    File,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+impl EntryKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Folder => "folder",
+            Self::File => "file",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "folder" => Some(Self::Folder),
+            "file" => Some(Self::File),
+            _ => None,
+        }
+    }
+
+    pub fn from(s: String) -> Option<Self> {
+        match s.as_str() {
+            "folder" => Some(Self::Folder),
+            "file" => Some(Self::File),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ItemType {
-    IMG,
-    VID,
-    AUD,
-    READ,
+    #[default]
+    Img,
+    Vid,
+    Aud,
+    Read,
 }
 
 impl ItemType {
-    pub fn from_path(path: &PathBuf) -> Option<Self> {
+    pub fn from_path(path: &Path) -> Option<Self> {
         let ext = path.extension()?.to_str()?.to_lowercase();
         match ext.as_str() {
-            "jpg" | "jpeg" | "png" | "gif" | "webp" | "avif" => Some(Self::IMG),
-            "mp4" | "mkv" | "mov" | "webm" | "avi" | "m4v" => Some(Self::VID),
-            "mp3" | "flac" | "wav" | "ogg" | "aac" | "m4a" | "opus" => Some(Self::AUD),
-            "pdf" | "epub" => Some(Self::READ),
+            "jpg" | "jpeg" | "png" | "gif" | "webp" | "avif" => Some(Self::Img),
+            "mp4" | "mkv" | "mov" | "webm" | "avi" | "m4v" => Some(Self::Vid),
+            "mp3" | "flac" | "wav" | "ogg" | "aac" | "m4a" | "opus" => Some(Self::Aud),
+            "pdf" | "epub" => Some(Self::Read),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Img => "img",
+            Self::Vid => "vid",
+            Self::Aud => "aud",
+            Self::Read => "read",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "img" => Some(Self::Img),
+            "vid" => Some(Self::Vid),
+            "aud" => Some(Self::Aud),
+            "read" => Some(Self::Read),
+            _ => None,
+        }
+    }
+
+    pub fn from(s: String) -> Option<Self> {
+        match s.as_str() {
+            "img" => Some(Self::Img),
+            "vid" => Some(Self::Vid),
+            "aud" => Some(Self::Aud),
+            "read" => Some(Self::Read),
             _ => None,
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Item {
-    pub id: i32,
+pub struct Library {
+    pub id: i64,
     pub name: String,
     pub path: PathBuf,
-    pub item_type: ItemType,
+    pub kind: LibraryKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Entry {
+    pub id: i64,
+    pub library_id: i64,
+    pub parent_id: Option<i64>,
+    pub name: String,
+    pub path: PathBuf,
+    pub kind: EntryKind,
+    pub item_type: Option<ItemType>,
+    pub size: Option<i64>,
+    pub mtime: Option<i64>,
 }
 
 #[cfg(test)]
@@ -63,7 +162,7 @@ mod test {
             let path = PathBuf::from(format!("file.{ext}"));
             assert_eq!(
                 ItemType::from_path(&path),
-                Some(ItemType::IMG),
+                Some(ItemType::Img),
                 "failed for .{ext}"
             )
         }
@@ -75,7 +174,7 @@ mod test {
             let path = PathBuf::from(format!("file.{ext}"));
             assert_eq!(
                 ItemType::from_path(&path),
-                Some(ItemType::VID),
+                Some(ItemType::Vid),
                 "failed for .{ext}"
             )
         }
@@ -87,7 +186,7 @@ mod test {
             let path = PathBuf::from(format!("file.{ext}"));
             assert_eq!(
                 ItemType::from_path(&path),
-                Some(ItemType::AUD),
+                Some(ItemType::Aud),
                 "failed for .{ext}"
             )
         }
@@ -99,7 +198,7 @@ mod test {
             let path = PathBuf::from(format!("file.{ext}"));
             assert_eq!(
                 ItemType::from_path(&path),
-                Some(ItemType::READ),
+                Some(ItemType::Read),
                 "failed for .{ext}"
             )
         }
