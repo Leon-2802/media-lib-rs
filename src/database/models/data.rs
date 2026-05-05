@@ -1,30 +1,42 @@
 use std::path::{Path, PathBuf};
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct Library {
-    pub id: i32,
-    pub name: String,
-    pub path: PathBuf,
-    pub series: Vec<Series>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LibraryKind {
+    Movies,
+    Tv,
+    Manga,
+    Books,
+    Music,
+    Audiobooks,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct Series {
-    pub id: i32,
-    pub name: String,
-    pub path: PathBuf,
-    pub parts: Vec<Part>,
+impl LibraryKind {
+    pub fn as_str(&self) -> &'static str {
+        todo!()
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        todo!()
+    }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct Part {
-    pub id: i32,
-    pub name: String,
-    pub path: PathBuf,
-    pub items: Vec<Item>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EntryKind {
+    Folder,
+    File,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+impl EntryKind {
+    pub fn as_str(&self) -> &'static str {
+        todo!()
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        todo!()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ItemType {
     Img,
     Vid,
@@ -43,14 +55,35 @@ impl ItemType {
             _ => None,
         }
     }
+
+    pub fn as_str(&self) -> &'static str {
+        todo!()
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        todo!()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Item {
-    pub id: i32,
+pub struct Library {
+    pub id: i64,
     pub name: String,
     pub path: PathBuf,
-    pub item_type: ItemType,
+    pub kind: LibraryKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Entry {
+    pub id: i64,
+    pub library_id: i64,
+    pub parent_id: Option<i64>,
+    pub name: String,
+    pub path: PathBuf,
+    pub kind: EntryKind,
+    pub item_type: Option<ItemType>,
+    pub size: Option<i64>,
+    pub mtime: Option<i64>,
 }
 
 #[cfg(test)]

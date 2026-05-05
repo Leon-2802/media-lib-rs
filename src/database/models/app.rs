@@ -1,27 +1,24 @@
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct Favorites {
-    pub id: i32,
-    pub series_id: i32,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Tag {
+    pub id: i64,
+    pub name: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Rating {
+    pub entry_id: i64,
+    pub rating: i8,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Favorite {
+    pub entry_id: i64,
+    pub added_at: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SearchHistory {
-    pub id: i32,
+    pub id: i64,
     pub query: String,
+    pub at: i64,
 }
-
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct SeriesRating {
-    pub id: i32,
-    pub series_id: i32,
-    pub rating: i32,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct PartRating {
-    pub id: i32,
-    pub part_id: i32,
-    pub rating: i32,
-}
-
-// ItemRating? Manga pages vs episodes etc
