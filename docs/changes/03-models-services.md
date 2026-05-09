@@ -58,7 +58,7 @@ pub struct Favorite { pub entry_id: i64, pub added_at: i64 }
 
 `PathBuf` for paths instead of `String` so callers do not have to keep re-parsing.
 
-`ItemType::from_path(&Path) -> Option<Self>` from the existing code stays as is, plus matching `as_str` and `from_str` helpers for storing in TEXT columns.
+`ItemType::from_path(&Path) -> Option<Self>` from the existing code stays as is, plus matching `to_str` and `from_str` helpers for storing in TEXT columns.
 
 ## Services
 

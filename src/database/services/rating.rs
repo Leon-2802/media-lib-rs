@@ -31,7 +31,7 @@ impl RatingService {
         }
     }
 
-    pub fn clear(&self, entry_id: i64) -> Result<bool> {
+    pub fn delete(&self, entry_id: i64) -> Result<bool> {
         let conn = self.conn.lock().unwrap();
         let rows_affected = conn.execute("DELETE FROM ratings WHERE entry_id = ?1", [entry_id])?;
         Ok(rows_affected > 0)
