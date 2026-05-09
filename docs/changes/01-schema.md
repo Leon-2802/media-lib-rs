@@ -40,7 +40,7 @@ CREATE INDEX entries_library ON entries(library_id);
 
 ## Column notes
 
-`libraries.kind` is stored as text rather than an integer so a glance at the table tells you what each library is. The `CHECK` constraint pins it to the seven legal values, giving us enum-like safety without losing readability — a typo in the Rust `as_str`/`from_str` mapping or a future migration that forgets a value fails at insert time instead of silently corrupting the table.
+`libraries.kind` is stored as text rather than an integer so a glance at the table tells you what each library is. The `CHECK` constraint pins it to the seven legal values, giving us enum-like safety without losing readability — a typo in the Rust `to_str`/`from_str` mapping or a future migration that forgets a value fails at insert time instead of silently corrupting the table.
 
 `entries.parent_id` is `NULL` for top-level entries. A top-level entry is a Title, the thing the user rates and favorites. Anything below it is a descendant.
 

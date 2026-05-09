@@ -51,7 +51,7 @@ Mostly the same shape the project already has, just with more services and a `sq
 - `Series`, `Part`, and the old `Item` structs go away entirely. `Entry` replaces them.
 - The four `*Service` files keep their structure (one file per service, each owning an `Arc<Mutex<Connection>>`). The methods change.
 - The existing `LibService` tests keep their shape: open in-memory DB, exercise CRUD, assert. Just renamed and updated for the new model.
-- `ItemType::from_path` stays. Adding `as_str` and `from_str` for TEXT serialization in the DB.
+- `ItemType::from_path` stays. Adding `to_str` and `from_str` for TEXT serialization in the DB.
 
 `i32` becomes `i64` everywhere ids appear.
 
