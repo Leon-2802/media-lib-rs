@@ -1,3 +1,7 @@
+//! Service for querying and manipulating [`Entry`] records in the database.
+//!
+//! [`Entry`]: crate::database::models::data::Entry
+
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -5,15 +9,18 @@ use rusqlite::{Connection, Result};
 
 use crate::database::models::data::{Entry, EntryKind, ItemType};
 
+/// Service for managing file/folder entries within libraries.
 pub struct EntryService {
     conn: Arc<Mutex<Connection>>,
 }
 
 impl EntryService {
+    /// Creates a new `EntryService` backed by the given connection.
     pub fn new(conn: Arc<Mutex<Connection>>) -> Self {
         Self { conn }
     }
 
+    /// Fetches a single entry by its numeric `id`. Returns `None` if not found.
     pub fn get(&self, id: i64) -> Result<Option<Entry>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
@@ -41,6 +48,7 @@ impl EntryService {
         }
     }
 
+    /// Fetches a single entry by its absolute on-disk `path`. Returns `None` if not found.
     pub fn by_path(&self, path: &Path) -> Result<Option<Entry>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
@@ -68,6 +76,7 @@ impl EntryService {
         }
     }
 
+    /// Returns all direct children (entries with `parent_id == given id`).
     pub fn children(&self, parent_id: i64) -> Result<Vec<Entry>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
@@ -98,7 +107,10 @@ impl EntryService {
         Ok(entries)
     }
 
-    /// Recursive CTE walking the subtree rooted at `root_id`.
+    /// Returns the entry with `id` and all of its recursive descendants,
+    /// ordered by path. Uses a recursive CTE.
+    ///
+    /// Does **not** include the root entry itself — only its children.
     pub fn descendants(&self, root_id: i64) -> Result<Vec<Entry>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
@@ -171,7 +183,10 @@ impl EntryService {
         Ok(entries)
     }
 
-    /// Recursive CTE walking up to the root (parent_id IS NULL).
+    /// Returns the entry with `entry_id` and all of its ancestors up to the
+    /// root (where `parent_id IS NULL`), ordered by path. Uses a recursive CTE.
+    ///
+    /// The first element of the returned vec is the root entry.
     pub fn ancestors(&self, entry_id: i64) -> Result<Vec<Entry>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
@@ -244,12 +259,21 @@ impl EntryService {
         Ok(entries)
     }
 
-    /// Walks up parent_id chain until parent_id IS NULL.
+    /// Returns the root entry of the tree containing `entry_id`.
+    /// Walks up the `parent_id` chain until reaching a node whose `parent_id` is `NULL`.
+    ///
+    /// Returns `None` if `entry_id` itself is not found.
     pub fn title_of(&self, entry_id: i64) -> Result<Option<Entry>> {
         let ancestors = self.ancestors(entry_id)?;
         Ok(ancestors.first().cloned())
     }
 
+    /// Inserts a new entry or updates an existing one matching on `path`.
+    ///
+    /// The `kind` is inferred from `path.is_dir()` and `item_type` is inferred
+    /// from the file extension via [`ItemType::from_path`].
+    ///
+    /// Returns the rowid of the inserted or updated row.
     pub fn upsert_entry(
         &self,
         library_id: i64,
@@ -267,8 +291,8 @@ impl EntryService {
         };
         conn.execute(
             "
-                INSERT INTO entries (library_id, parent_id, name, path, kind, item_type, size, mtime) 
-                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) 
+                INSERT INTO entries (library_id, parent_id, name, path, kind, item_type, size, mtime)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
                 ON CONFLICT(path) DO UPDATE SET
                     library_id = excluded.library_id,
                     parent_id = excluded.parent_id,
@@ -292,6 +316,7 @@ impl EntryService {
         Ok(conn.last_insert_rowid())
     }
 
+    /// Deletes the entry with the given `id`. Returns `true` if a row was deleted.
     pub fn delete(&self, id: i64) -> Result<bool> {
         let conn = self.conn.lock().unwrap();
         let rows_affected = conn.execute("DELETE FROM entries WHERE id = ?1", [id])?;
@@ -299,7 +324,9 @@ impl EntryService {
     }
 }
 
-/// Folders are always rateable; image files (manga pages) are not.
+/// Returns `true` if `entry` is eligible for rating.
+///
+/// Folders are always rateable; image files (e.g. manga pages) are excluded.
 pub fn is_rateable(entry: &Entry) -> bool {
     use crate::database::models::data::EntryKind;
     match entry.kind {

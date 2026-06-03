@@ -1,21 +1,24 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+//! Service for managing favorited entries.
+
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 use rusqlite::{Connection, Result};
 
 use crate::database::models::data::{Entry, EntryKind, ItemType};
 
+/// Service for marking and querying favorite entries.
 pub struct FavoriteService {
     conn: Arc<Mutex<Connection>>,
 }
 
 impl FavoriteService {
+    /// Creates a new `FavoriteService` backed by the given connection.
     pub fn new(conn: Arc<Mutex<Connection>>) -> Self {
         Self { conn }
     }
 
+    /// Marks an entry as a favorite. Idempotent via `INSERT OR IGNORE`.
     pub fn add(&self, entry_id: i64) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -25,6 +28,7 @@ impl FavoriteService {
         Ok(())
     }
 
+    /// Removes the favorite status of an entry. Returns `true` if a row was deleted.
     pub fn remove(&self, entry_id: i64) -> Result<bool> {
         let conn = self.conn.lock().unwrap();
         let rows_affected =
@@ -32,6 +36,7 @@ impl FavoriteService {
         Ok(rows_affected > 0)
     }
 
+    /// Returns `true` if the entry is currently marked as a favorite.
     pub fn is_favorite(&self, entry_id: i64) -> Result<bool> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT 1 FROM favorites WHERE entry_id = ?1")?;
@@ -39,7 +44,7 @@ impl FavoriteService {
         Ok(rows.next()?.is_some())
     }
 
-    /// All favorited entries, joined through the favorites table.
+    /// Returns all favorited entries, joined from the `favorites` and `entries` tables.
     pub fn all(&self) -> Result<Vec<Entry>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("

@@ -1,3 +1,7 @@
+//! Service for managing [`Library`] records in the database.
+//!
+//! [`Library`]: crate::database::models::data::Library
+
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -5,15 +9,24 @@ use rusqlite::{Connection, Result};
 
 use crate::database::models::data::{Entry, EntryKind, ItemType, Library, LibraryKind};
 
+/// Service for registering and removing media libraries.
 pub struct LibraryService {
     conn: Arc<Mutex<Connection>>,
 }
 
 impl LibraryService {
+    /// Creates a new `LibraryService` backed by the given connection.
     pub fn new(conn: Arc<Mutex<Connection>>) -> Self {
         Self { conn }
     }
 
+    /// Registers a new library and returns its assigned `id`.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` — human-readable label (e.g. "Movies", "My Manga")
+    /// * `path` — absolute path to the library root on disk
+    /// * `kind` — the category of this library
     pub fn add(&self, name: &str, path: &Path, kind: LibraryKind) -> Result<i64> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -23,6 +36,7 @@ impl LibraryService {
         Ok(conn.last_insert_rowid())
     }
 
+    /// Fetches a single library by its numeric `id`. Returns `None` if not found.
     pub fn get(&self, id: i64) -> Result<Option<Library>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, name, path, kind FROM libraries WHERE id = ?1")?;
@@ -42,6 +56,7 @@ impl LibraryService {
         }
     }
 
+    /// Returns all registered libraries, ordered by name.
     pub fn all(&self) -> Result<Vec<Library>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, name, path, kind FROM libraries")?;
@@ -61,13 +76,15 @@ impl LibraryService {
         Ok(entries)
     }
 
+    /// Deletes the library with the given `id`. Returns `true` if a row was deleted.
     pub fn delete(&self, id: i64) -> Result<bool> {
         let conn = self.conn.lock().unwrap();
         let rows_affected = conn.execute("DELETE FROM libraries WHERE id = ?1", [id])?;
         Ok(rows_affected > 0)
     }
 
-    /// Top-level entries of a libraries (rows where parent_id IS NULL).
+    /// Returns all root-level entries of the library (those with `parent_id IS NULL`),
+    /// ordered by name. These are the top-level "titles" in the library hierarchy.
     pub fn titles(&self, library_id: i64) -> Result<Vec<Entry>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(

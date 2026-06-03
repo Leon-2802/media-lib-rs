@@ -3,7 +3,7 @@ CREATE TABLE libraries (
     name  TEXT NOT NULL,
     path  TEXT NOT NULL UNIQUE,
     kind  TEXT NOT NULL
-        CHECK (kind IN ('movies','tv','manga','books','music','audiobooks'))
+        CHECK (kind IN ('movies','tv','manga','books','audio'))
 );
 
 CREATE TABLE entries (
