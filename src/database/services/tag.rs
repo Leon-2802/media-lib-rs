@@ -65,7 +65,12 @@ impl TagService {
 
     pub fn entries_with_tag(&self, tag_id: i64) -> Result<Vec<Entry>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT entry_id FROM entry_tags WHERE tag_id = ?1")?;
+        let mut stmt = conn.prepare(
+            "SELECT e.id, e.library_id, e.parent_id, e.name, e.path, e.kind, e.item_type, e.size, e.mtime
+                FROM entries e
+                INNER JOIN entry_tags et ON et.entry_id = e.id
+                WHERE et.tag_id = ?1"
+        )?;
         let mut rows = stmt.query([tag_id])?;
         let mut entries = Vec::new();
         while let Some(row) = rows.next()? {

@@ -17,7 +17,7 @@ impl LibraryService {
     pub fn add(&self, name: &str, path: &Path, kind: LibraryKind) -> Result<i64> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT INTO library (name, path, kind) VALUES (?1, ?2, ?3)",
+            "INSERT INTO libraries (name, path, kind) VALUES (?1, ?2, ?3)",
             (name, path.to_str(), kind.as_str()),
         )?;
         Ok(conn.last_insert_rowid())
@@ -25,7 +25,7 @@ impl LibraryService {
 
     pub fn get(&self, id: i64) -> Result<Option<Library>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, name, path, kind FROM library WHERE id = ?1")?;
+        let mut stmt = conn.prepare("SELECT id, name, path, kind FROM libraries WHERE id = ?1")?;
         let mut rows = stmt.query([id])?;
         match rows.next()? {
             Some(row) => {
@@ -44,7 +44,7 @@ impl LibraryService {
 
     pub fn all(&self) -> Result<Vec<Library>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT id, name, path, kind FROM library")?;
+        let mut stmt = conn.prepare("SELECT id, name, path, kind FROM libraries")?;
         let mut rows = stmt.query([])?;
         let mut entries = Vec::new();
         while let Some(row) = rows.next()? {
@@ -63,19 +63,19 @@ impl LibraryService {
 
     pub fn delete(&self, id: i64) -> Result<bool> {
         let conn = self.conn.lock().unwrap();
-        let rows_affected = conn.execute("DELETE FROM library WHERE id = ?1", [id])?;
+        let rows_affected = conn.execute("DELETE FROM libraries WHERE id = ?1", [id])?;
         Ok(rows_affected > 0)
     }
 
-    /// Top-level entries of a library (rows where parent_id IS NULL).
+    /// Top-level entries of a libraries (rows where parent_id IS NULL).
     pub fn titles(&self, library_id: i64) -> Result<Vec<Entry>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("
-            SELECT e.id, e.library_id, e.parent_id, e.name, e.path, e.kind, e.item_type, e.size, e.mtime
-            FROM entries e
-            JOIN library l ON e.id = l.id
-            WHERE l.id = ?1
-        ")?;
+        let mut stmt = conn.prepare(
+            "SELECT id, library_id, parent_id, name, path, kind, item_type, size, mtime
+                FROM entries
+                WHERE library_id = ?1 AND parent_id IS NULL
+                ORDER BY name",
+        )?;
         let mut rows = stmt.query([library_id])?;
         let mut entries = Vec::new();
         while let Some(row) = rows.next()? {

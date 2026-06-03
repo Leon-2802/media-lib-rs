@@ -21,8 +21,9 @@ CREATE TABLE entries (
     UNIQUE(library_id, path)
 );
 
-CREATE INDEX entries_parent  ON entries(parent_id);
-CREATE INDEX entries_library ON entries(library_id);
+CREATE INDEX entries_parent    ON entries(parent_id);
+CREATE INDEX entries_library   ON entries(library_id);
+CREATE INDEX entries_size_mtime ON entries(size, mtime);
 
 CREATE TABLE tags (
     id   INTEGER PRIMARY KEY,

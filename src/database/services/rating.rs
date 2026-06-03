@@ -11,12 +11,12 @@ impl RatingService {
         Self { conn }
     }
 
-    pub fn set(&self, entry_id: i64, rating: i8) -> Result<()> {
+    pub fn set(&self, entry_id: i64, rating: i64) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT INTO ratings (entry_id, rating) VALUES (?1, ?2) 
+            "INSERT INTO ratings (entry_id, rating) VALUES (?1, ?2)
                       ON CONFLICT(entry_id) DO UPDATE SET rating=excluded.rating",
-            [entry_id],
+            [entry_id, rating],
         )?;
         Ok(())
     }
