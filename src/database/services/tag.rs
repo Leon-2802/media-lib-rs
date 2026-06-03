@@ -21,11 +21,9 @@ impl TagService {
             "INSERT INTO tags (name) VALUES (?1) ON CONFLICT(name) DO NOTHING",
             [name],
         )?;
-        Ok(
-            conn.query_row("SELECT id FROM tags WHERE name = ?1", [name], |row| {
-                row.get(0)
-            })?,
-        )
+        conn.query_row("SELECT id FROM tags WHERE name = ?1", [name], |row| {
+            row.get(0)
+        })
     }
 
     pub fn attach(&self, entry_id: i64, tag_id: i64) -> Result<()> {
@@ -49,8 +47,8 @@ impl TagService {
     pub fn for_entry(&self, entry_id: i64) -> Result<Vec<Tag>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT t.id, t.name FROM tags t 
-            INNER JOIN entry_tags et ON et.tag_id = t.id 
+            "SELECT t.id, t.name FROM tags t
+            INNER JOIN entry_tags et ON et.tag_id = t.id
             WHERE et.entry_id = ?1 ORDER BY t.name",
         )?;
         let mut rows = stmt.query([entry_id])?;
