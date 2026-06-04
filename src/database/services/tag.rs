@@ -1,12 +1,12 @@
 //! Service for creating and managing tags, and attaching them to entries.
 
-use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use rusqlite::Connection;
 
 use crate::database::models::app::Tag;
-use crate::database::models::data::{Entry, EntryKind, ItemType};
+use crate::database::models::data::Entry;
+use crate::database::services::entry::{ENTRY_COLUMNS, query_entries};
 
 /// Service for managing tags and their associations with entries.
 pub struct TagService {
@@ -19,10 +19,15 @@ impl TagService {
         Self { conn }
     }
 
+    /// Locks the shared database connection for this service operation.
+    fn conn(&self) -> MutexGuard<'_, Connection> {
+        self.conn.lock().expect("database mutex poisoned")
+    }
+
     /// Looks up a tag by name, creating it if it does not yet exist.
     /// Returns the tag's `id`.
     pub fn get_or_create(&self, name: &str) -> rusqlite::Result<i64> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute(
             "INSERT INTO tags (name) VALUES (?1) ON CONFLICT(name) DO NOTHING",
             [name],
@@ -34,7 +39,7 @@ impl TagService {
 
     /// Attaches an existing tag to an entry. Idempotent (uses `INSERT OR IGNORE`).
     pub fn attach(&self, entry_id: i64, tag_id: i64) -> rusqlite::Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute(
             "INSERT OR IGNORE INTO entry_tags (entry_id, tag_id) VALUES (?1, ?2)",
             [entry_id, tag_id],
@@ -45,7 +50,7 @@ impl TagService {
     /// Removes the association between an entry and a tag.
     /// Returns `Ok(())` even if the association did not exist.
     pub fn detach(&self, entry_id: i64, tag_id: i64) -> rusqlite::Result<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute(
             "DELETE FROM entry_tags WHERE entry_id = ?1 AND tag_id = ?2",
             [entry_id, tag_id],
@@ -55,7 +60,7 @@ impl TagService {
 
     /// Returns all tags attached to a given entry, ordered by name.
     pub fn for_entry(&self, entry_id: i64) -> rusqlite::Result<Vec<Tag>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let mut stmt = conn.prepare(
             "SELECT t.id, t.name FROM tags t
             INNER JOIN entry_tags et ON et.tag_id = t.id
@@ -75,35 +80,13 @@ impl TagService {
 
     /// Returns all entries that carry the given tag.
     pub fn entries_with_tag(&self, tag_id: i64) -> rusqlite::Result<Vec<Entry>> {
-        let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
-            "SELECT e.id, e.library_id, e.parent_id, e.name, e.path, e.kind, e.item_type, e.size, e.mtime
+        let conn = self.conn();
+        let sql = format!(
+            "SELECT {ENTRY_COLUMNS}
                 FROM entries e
                 INNER JOIN entry_tags et ON et.entry_id = e.id
                 WHERE et.tag_id = ?1"
-        )?;
-        let mut rows = stmt.query([tag_id])?;
-        let mut entries = Vec::new();
-        while let Some(row) = rows.next()? {
-            let path: String = row.get(4)?;
-            let kind: String = row.get(5)?;
-            let item_type: Option<String> = row.get(6)?;
-
-            entries.push(Entry {
-                id: row.get(0)?,
-                library_id: row.get(1)?,
-                parent_id: row.get(2)?,
-                name: row.get(3)?,
-
-                path: PathBuf::from(path),
-                kind: EntryKind::from(kind).unwrap_or_default(),
-                item_type: item_type.and_then(ItemType::from),
-
-                size: row.get(7)?,
-                mtime: row.get(8)?,
-            });
-        }
-
-        Ok(entries)
+        );
+        query_entries(&conn, &sql, [tag_id])
     }
 }

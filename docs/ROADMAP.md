@@ -4,10 +4,9 @@
 
 **Goal:** Discover and track every file/folder in a user's local media library so the DB always reflects what is on disk.
 
-- [ ] `walk_dir()` — Recursively walk a library root directory. Skip hidden files, dotfiles, and symlinks. Return a flat list of `DiskNode`.
-- [ ] `diff()` — Compare on-disk state against existing DB entries. Produce three lists: `to_insert`, `to_update`, `to_delete`.
-- [ ] `scan_library()` — Fetch library root → walk → diff → apply changes in a single `BEGIN IMMEDIATE` transaction. Return a `ScanReport`.
-- [ ] Re-scan detection: detect removed files (gone from disk, still in DB) and deleted folders.
+- [x] `walk_dir()` — Recursively walk a library root directory. Skip hidden files and dotfiles, and do not follow symlink targets. Return a flat list of `DiskNode`.
+- [x] `scan_library()` — Fetch library root → walk → compare against existing DB entries → apply changes in a single `BEGIN IMMEDIATE` transaction. Return a `ScanReport`.
+- [x] Re-scan detection: detect removed files (gone from disk, still in DB) and deleted folders.
 - [ ] CLI commands: `add-library <name> <path> <type>`, `scan <library-id>`, `list-libraries`, `remove-library <id>`, `list-entries <library-id>`
 
 ---
