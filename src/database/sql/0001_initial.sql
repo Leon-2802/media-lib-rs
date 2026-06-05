@@ -9,8 +9,7 @@ CREATE TABLE libraries (
 CREATE TABLE entries (
     id          INTEGER PRIMARY KEY,
     library_id  INTEGER NOT NULL REFERENCES libraries(id) ON DELETE CASCADE,
-    parent_id   INTEGER REFERENCES entries(id) ON DELETE CASCADE,
-    name        TEXT NOT NULL,
+    parent_id   INTEGER,
     path        TEXT NOT NULL,
     kind        TEXT NOT NULL
         CHECK (kind IN ('folder','file')),
@@ -18,7 +17,11 @@ CREATE TABLE entries (
         CHECK (item_type IN ('img','vid','aud','read')),
     size        INTEGER,
     mtime       INTEGER,
-    UNIQUE(library_id, path)
+    UNIQUE(library_id, path),
+    UNIQUE(library_id, id),
+    FOREIGN KEY (library_id, parent_id)
+        REFERENCES entries(library_id, id)
+        ON DELETE CASCADE
 );
 
 CREATE INDEX entries_parent    ON entries(parent_id);
@@ -43,7 +46,7 @@ CREATE TABLE ratings (
 
 CREATE TABLE favorites (
     entry_id INTEGER PRIMARY KEY REFERENCES entries(id) ON DELETE CASCADE,
-    added_at INTEGER NOT NULL
+    added_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 CREATE TABLE search_history (

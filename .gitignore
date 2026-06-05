@@ -21,3 +21,7 @@ target
 .vscode/
 .idea/
 .github/
+
+# DB
+*.db
+*.sqlite

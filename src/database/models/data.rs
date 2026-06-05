@@ -4,6 +4,24 @@
 //! enums [`LibraryKind`], [`EntryKind`], and [`ItemType`].
 
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
+
+use thiserror::Error;
+
+/// Error returned when parsing an unknown [`LibraryKind`] string.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("invalid library kind")]
+pub struct ParseLibraryKindError;
+
+/// Error returned when parsing an unknown [`EntryKind`] string.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("invalid entry kind")]
+pub struct ParseEntryKindError;
+
+/// Error returned when parsing an unknown [`ItemType`] string.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("invalid item type")]
+pub struct ParseItemTypeError;
 
 /// The kind/category of a media library.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -32,29 +50,20 @@ impl LibraryKind {
             Self::Audio => "audio",
         }
     }
+}
 
-    /// Parses a [`LibraryKind`] from a string slice, returning `None` for unknown values.
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "movies" => Some(Self::Movies),
-            "tv" => Some(Self::Tv),
-            "manga" => Some(Self::Manga),
-            "books" => Some(Self::Books),
-            "audio" => Some(Self::Audio),
-            _ => None,
-        }
-    }
+impl FromStr for LibraryKind {
+    type Err = ParseLibraryKindError;
 
-    /// Parses a [`LibraryKind`] from an owned string, returning `None` for unknown values.
-    pub fn from(s: String) -> Option<Self> {
-        match s.as_str() {
-            "movies" => Some(Self::Movies),
-            "tv" => Some(Self::Tv),
-            "manga" => Some(Self::Manga),
-            "books" => Some(Self::Books),
-            "audio" => Some(Self::Audio),
-            _ => None,
-        }
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "movies" => Self::Movies,
+            "tv" => Self::Tv,
+            "manga" => Self::Manga,
+            "books" => Self::Books,
+            "audio" => Self::Audio,
+            _ => return Err(ParseLibraryKindError),
+        })
     }
 }
 
@@ -76,23 +85,17 @@ impl EntryKind {
             Self::File => "file",
         }
     }
+}
 
-    /// Parses an [`EntryKind`] from a string slice.
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "folder" => Some(Self::Folder),
-            "file" => Some(Self::File),
-            _ => None,
-        }
-    }
+impl FromStr for EntryKind {
+    type Err = ParseEntryKindError;
 
-    /// Parses an [`EntryKind`] from an owned string.
-    pub fn from(s: String) -> Option<Self> {
-        match s.as_str() {
-            "folder" => Some(Self::Folder),
-            "file" => Some(Self::File),
-            _ => None,
-        }
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "folder" => Self::Folder,
+            "file" => Self::File,
+            _ => return Err(ParseEntryKindError),
+        })
     }
 }
 
@@ -115,14 +118,37 @@ impl ItemType {
     /// Infers the [`ItemType`] from a file path's extension. Returns `None` if the
     /// extension is not recognized.
     pub fn from_path(path: &Path) -> Option<Self> {
-        let ext = path.extension()?.to_str()?.to_lowercase();
-        match ext.as_str() {
-            "jpg" | "jpeg" | "png" | "gif" | "webp" | "avif" => Some(Self::Img),
-            "mp4" | "mkv" | "mov" | "webm" | "avi" | "m4v" => Some(Self::Vid),
-            "mp3" | "flac" | "wav" | "ogg" | "aac" | "m4a" | "opus" => Some(Self::Aud),
-            "pdf" | "epub" => Some(Self::Read),
-            _ => None,
+        let ext = path.extension()?.to_str()?;
+
+        if ["jpg", "jpeg", "png", "gif", "webp", "avif"]
+            .iter()
+            .any(|candidate| ext.eq_ignore_ascii_case(candidate))
+        {
+            return Some(Self::Img);
         }
+
+        if ["mp4", "mkv", "mov", "webm", "avi", "m4v"]
+            .iter()
+            .any(|candidate| ext.eq_ignore_ascii_case(candidate))
+        {
+            return Some(Self::Vid);
+        }
+
+        if ["mp3", "flac", "wav", "ogg", "aac", "m4a", "opus"]
+            .iter()
+            .any(|candidate| ext.eq_ignore_ascii_case(candidate))
+        {
+            return Some(Self::Aud);
+        }
+
+        if ["pdf", "epub"]
+            .iter()
+            .any(|candidate| ext.eq_ignore_ascii_case(candidate))
+        {
+            return Some(Self::Read);
+        }
+
+        None
     }
 
     /// Returns `"img"`, `"vid"`, `"aud"`, or `"read"`.
@@ -134,27 +160,19 @@ impl ItemType {
             Self::Read => "read",
         }
     }
+}
 
-    /// Parses an [`ItemType`] from a string slice.
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "img" => Some(Self::Img),
-            "vid" => Some(Self::Vid),
-            "aud" => Some(Self::Aud),
-            "read" => Some(Self::Read),
-            _ => None,
-        }
-    }
+impl FromStr for ItemType {
+    type Err = ParseItemTypeError;
 
-    /// Parses an [`ItemType`] from an owned string.
-    pub fn from(s: String) -> Option<Self> {
-        match s.as_str() {
-            "img" => Some(Self::Img),
-            "vid" => Some(Self::Vid),
-            "aud" => Some(Self::Aud),
-            "read" => Some(Self::Read),
-            _ => None,
-        }
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "img" => Self::Img,
+            "vid" => Self::Vid,
+            "aud" => Self::Aud,
+            "read" => Self::Read,
+            _ => return Err(ParseItemTypeError),
+        })
     }
 }
 
@@ -182,8 +200,6 @@ pub struct Entry {
     pub library_id: i64,
     /// `None` for root-level entries; `Some(i64)` for nested entries.
     pub parent_id: Option<i64>,
-    /// File or folder name.
-    pub name: String,
     /// Absolute path to this entry on disk.
     pub path: PathBuf,
     /// Whether this is a folder or a file.
@@ -194,6 +210,26 @@ pub struct Entry {
     pub size: Option<i64>,
     /// Last-modified time as a Unix timestamp (seconds). `None` for folders.
     pub mtime: Option<i64>,
+}
+
+impl Entry {
+    /// Returns the file or folder name derived from the entry path.
+    pub fn name(&self) -> &str {
+        self.path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default()
+    }
+
+    /// Returns `true` if the entry is eligible for rating.
+    ///
+    /// Folders are always rateable; image files (e.g. manga pages) are excluded.
+    pub fn is_rateable(&self) -> bool {
+        match self.kind {
+            EntryKind::Folder => true,
+            EntryKind::File => !matches!(self.item_type, Some(ItemType::Img)),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -254,5 +290,93 @@ mod test {
             let path = PathBuf::from(format!("file.{ext}"));
             assert_eq!(ItemType::from_path(&path), None, "failed for .{ext}")
         }
+    }
+
+    #[test]
+    fn test_extensions_ignore_case() {
+        assert_eq!(
+            ItemType::from_path(&PathBuf::from("cover.JPG")),
+            Some(ItemType::Img)
+        );
+        assert_eq!(
+            ItemType::from_path(&PathBuf::from("movie.MKV")),
+            Some(ItemType::Vid)
+        );
+        assert_eq!(
+            ItemType::from_path(&PathBuf::from("song.FLAC")),
+            Some(ItemType::Aud)
+        );
+        assert_eq!(
+            ItemType::from_path(&PathBuf::from("book.PDF")),
+            Some(ItemType::Read)
+        );
+    }
+
+    #[test]
+    fn parses_database_strings() {
+        assert_eq!(
+            "movies".parse::<LibraryKind>().unwrap(),
+            LibraryKind::Movies
+        );
+        assert_eq!("folder".parse::<EntryKind>().unwrap(), EntryKind::Folder);
+        assert_eq!("vid".parse::<ItemType>().unwrap(), ItemType::Vid);
+
+        assert!("unknown".parse::<LibraryKind>().is_err());
+        assert!("directory".parse::<EntryKind>().is_err());
+        assert!("video".parse::<ItemType>().is_err());
+    }
+
+    #[test]
+    fn entry_name_comes_from_path() {
+        let entry = Entry {
+            id: 1,
+            library_id: 1,
+            parent_id: None,
+            path: PathBuf::from("Library/Movie/movie.mkv"),
+            kind: EntryKind::File,
+            item_type: Some(ItemType::Vid),
+            size: Some(10),
+            mtime: Some(1),
+        };
+
+        assert_eq!(entry.name(), "movie.mkv");
+    }
+
+    #[test]
+    fn entry_rateability_matches_media_type() {
+        let folder = Entry {
+            id: 1,
+            library_id: 1,
+            parent_id: None,
+            path: PathBuf::from("Library/Movie"),
+            kind: EntryKind::Folder,
+            item_type: None,
+            size: None,
+            mtime: Some(1),
+        };
+        let image = Entry {
+            id: 2,
+            library_id: 1,
+            parent_id: Some(1),
+            path: PathBuf::from("Library/Movie/poster.jpg"),
+            kind: EntryKind::File,
+            item_type: Some(ItemType::Img),
+            size: Some(10),
+            mtime: Some(1),
+        };
+        let video = Entry {
+            id: 3,
+            library_id: 1,
+            parent_id: Some(1),
+            path: PathBuf::from("Library/Movie/movie.mkv"),
+            kind: EntryKind::File,
+            item_type: Some(ItemType::Vid),
+            size: Some(10),
+            mtime: Some(1),
+        };
+
+        assert!(folder.is_rateable());
+        assert!(!image.is_rateable());
+        assert!(video.is_rateable());
     }
 }
