@@ -130,6 +130,7 @@ impl ScanService {
 
         let mut conn = self.conn();
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        // Select existing database entries
         let mut existing_by_path: HashMap<PathBuf, Entry> = entries_for_library(&tx, library_id)?
             .into_iter()
             .map(|entry| (entry.path.clone(), entry))
@@ -140,9 +141,11 @@ impl ScanService {
             .collect();
         let mut report = ScanReport::default();
 
+        // Compare database entries to disk nodes and collect differences:
         {
             let mut upsert_stmt = tx.prepare(UPSERT_ENTRY_SQL)?;
             for node in disk_nodes {
+                // Try to get entry from database entry list by using disk node path as key
                 let existing_entry = existing_by_path.remove(&node.path);
                 let parent_id = parent_id_for_path(&library.path, &node.path, &ids_by_path)?;
                 let entry = node.entry_write(library.id, parent_id);
@@ -159,11 +162,14 @@ impl ScanService {
                         upsert_entry_stmt(&mut upsert_stmt, &entry)?
                     }
                 };
+                // Why do we do this? Please add comment
                 ids_by_path.insert(node.path, id);
             }
         }
 
+        // All remaining entries can be marked as deleted
         report.deleted = existing_by_path.len();
+
         {
             let mut delete_stmt = tx.prepare("DELETE FROM entries WHERE id = ?1")?;
             for entry in existing_by_path.into_values() {
